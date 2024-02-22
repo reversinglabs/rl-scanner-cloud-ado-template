@@ -1,0 +1,84 @@
+# A very simplistic example showing the steps: build, scan, deploy.
+# The scan step is using the template: secure-software-portal-scan-ado.yml with parameters.
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: rl-scanner-cloud
+  # variables from this group contain rl-secure license information:
+  # - RLPORTAL_ACCESS_TOKEN
+  # they are defined via:
+  # - https://dev.azure.com/<your organisation>/<your project>/_library?itemType=VariableGroups
+  # consult the docs for more information:
+  # - https://learn.microsoft.com/en-us/azure/devops/pipelines/library/variable-groups?view=azure-devops&tabs=yaml
+- name: RLPORTAL_SERVER
+  value: test
+- name: RLPORTAL_ORG
+  value: Test
+- name: RLPORTAL_GROUP
+  value: Default
+- name: RL_PACKAGE_URL
+  value: 'tProject/tPackage@t1.0.0'
+- name: RL_DIFF_WITH
+  value: ''
+- name: MY_ARTIFACT_TO_SCAN # mandatory
+  value: README.md # to make it pass
+  # value: eicarcom2.zip # to make it fail
+- name: BUILD_PATH # optional if artifact is in current directory
+  value: '.'
+- name: REPORT_PATH # optional
+  value: RlReport
+
+- name: RL_WITH_UPLOAD # optional, allow upload of the report files
+  value: true
+
+- name: RLSECURE_PROXY_SERVER
+  value: ''
+- name: RLSECURE_PROXY_PORT
+  value: ''
+- name: RLSECURE_PROXY_USER
+  value: ''
+- name: RLSECURE_PROXY_PASSWORD
+  value: ''
+- name: RL_VERBOSE # optional, increase verbose
+  value: true
+
+steps:
+
+# build step
+- bash: |
+    echo "Pretend to build something"
+    ls -l ${BUILD_PATH}/$(MY_ARTIFACT_TO_SCAN)
+
+  displayName: 'Build the artifact'
+
+# scan step
+- template: secure-software-portal-scan-ado.yml
+  parameters:
+    RLPORTAL_ACCESS_TOKEN: $(RLPORTAL_ACCESS_TOKEN)
+    RLPORTAL_SERVER: ${{ variables.RLPORTAL_SERVER }}
+    RLPORTAL_ORG: ${{ variables.RLPORTAL_ORG }}
+    RLPORTAL_GROUP: ${{ variables.RLPORTAL_GROUP }}
+    RL_PACKAGE_URL: ${{ variables.RL_PACKAGE_URL }}
+    RL_DIFF_WITH: ${{ variables.RL_DIFF_WITH }}
+    BUILD_PATH: ${{ variables.BUILD_PATH }}
+    MY_ARTIFACT_TO_SCAN: ${{ variables.MY_ARTIFACT_TO_SCAN }}
+    REPORT_PATH: ${{ variables.REPORT_PATH }}
+
+    RL_WITH_UPLOAD:  ${{ variables.RL_WITH_UPLOAD }}
+    RL_PROXY_SERVER: ${{ variables.RL_PROXY_SERVER }}
+    RL_PROXY_PORT: ${{ variables.RL_PROXY_PORT }}
+    RL_PROXY_USER: ${{ variables.RL_PROXY_USER }}
+    RL_PROXY_PASSWORD: ${{ variables.RL_PROXY_PASSWORD }}
+    RL_VERBOSE: ${{ variables.RL_VERBOSE }}
+
+# deploy step
+- bash: |
+    echo "Pretend to deploy; should only execute if the previous step completed without error"
+    ls -l ${BUILD_PATH}/$(MY_ARTIFACT_TO_SCAN)
+
+  displayName: 'Deploy the build'
