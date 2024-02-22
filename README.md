@@ -1,0 +1,1 @@
+# rl-scanner-cloud-ado-template
